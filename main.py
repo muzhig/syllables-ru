@@ -1,13 +1,25 @@
-#coding=utf-8
 import re
-vowels = set(u'аеёиоуыэюя')
-sign_chars = set(u'ъь')
-pattern = re.compile(u"(c*[ьъ]?vc+[ьъ](?=v))|(c*[ьъ]?v(?=v|cv))|(c*[ьъ]?vc[ъь]?(?=cv|ccv))|(c*[ьъ]?v[cьъ]*(?=$))")
+from typing import List
 
-def get_syllables(word):
-    mask = ''.join(['v' if c in vowels else c if c in sign_chars else 'c' for c in word.lower()])
-    return [word[m.start():m.end()] for m in pattern.finditer(mask)]
 
-word = raw_input('слово:').decode('utf-8')
-print '-'.join(get_syllables(word))
+def get_syllables(word: str) -> List[str]:
+    """
+    Разбивает слово на слоги, полагаясь исключительно на взаимное расположение гласных и согласных
+    """
 
+    vowels = set('аеёиоуыэюя')
+    sign_chars = set('ъь')
+    word = word.lower()
+    mask = ''.join(['Г' if c in vowels else (c.upper() if c in sign_chars else 'С') for c in word])
+    syllables = [
+        word[m.start():m.end()]
+        for m in re.finditer(
+            "(С*[ЬЪ]?ГС+[ЬЪ](?=Г))" # ЪЬ перед гласной
+            "|(С*[ЬЪ]?Г(?=Г|СГ))"  # гласная перед другой гласной, либо парой согласная-гласная
+            "|(С*[ЬЪ]?ГС[ЬЪ]?(?=С{1,2}Г))"  # ГС перед СГ или ССГ (2-3 согласных подряд)
+            "|(С*[ЬЪ]?ГС{2}[ЬЪ]?(?=С{2,3}Г))"  # ГСС перед ССГ или СССГ (4-5 согласных подряд)
+            "|(С*[ЬЪ]?ГС{3}[ЬЪ]?(?=С{3,}Г))"  # ГССС перед СССГ / ССССГ  (6+ согласных подряд)
+            "|(С*[ЬЪ]?Г[СЬЪ]*(?=$))",  # гласная перед любым количеством согласных, после которых конец слова
+        mask)
+    ]
+    return syllables
